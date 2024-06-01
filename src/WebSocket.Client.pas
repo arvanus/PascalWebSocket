@@ -82,7 +82,7 @@ Type
     lSyncFunctionEvent:TSimpleEvent;
     lSyncFunctionTrigger:TFunc<String,Boolean>;
     //Sync Event
-    lInternalClient: ITask;
+    lInternalClient, lInternalHB: ITask;
 
     //get if a particular bit is 1
     function Get_a_Bit(const aValue: Cardinal; const Bit: Byte): Boolean;
@@ -143,6 +143,7 @@ begin
     begin
       self.sendCloseHandshake;
       lInternalClient.Wait(2000);
+      lInternalHB.Wait(2000);
       self.IOHandler.InputBuffer.Clear;
       self.IOHandler.CloseGracefully;
       self.Disconnect;
@@ -177,7 +178,7 @@ function TIdSimpleWebSocketClient.Connected: Boolean;
 begin
   result := false;  //for some reason, if its not connected raises an error after connection lost!
   try
-    result := inherited;
+    result := inherited and (not self.Socket.ClosedGracefully);
   except
   end
 end;
@@ -425,11 +426,10 @@ begin
       begin
 
         try
-          while Connected do
+          while Connected and (not self.lClosingEventLocalHandshake) do
           begin
 
             b := self.Socket.ReadByte;
-
 
             if FUpgraded and (lPos=0) and Get_a_Bit(b, 7) then //FIN
             begin
@@ -537,10 +537,10 @@ procedure TIdSimpleWebSocketClient.startHeartBeat;
 var TimeUltimaNotif:TDateTime;
     lForceDisconnect:Boolean;
 begin
-  TThread.CreateAnonymousThread(procedure begin
+  lInternalHB := TTask.Run(procedure begin
     TimeUltimaNotif := Now;
     try
-      while (self.Connected) and (self.HeartBeatInterval>0) do
+      while (self.Connected) and (not self.lClosingEventLocalHandshake) and (self.HeartBeatInterval>0) do
       begin
         //HeartBeat:
         if (MilliSecondsBetween(TimeUltimaNotif, Now) >= Floor(self.HeartBeatInterval)) then
@@ -549,7 +549,7 @@ begin
             self.onHeartBeatTimer(self);
           TimeUltimaNotif := Now;
         end;
-          TThread.Sleep(500);
+          TThread.Sleep(100);
       end;
     except
     on e:Exception do
@@ -562,7 +562,7 @@ begin
     end;
     end;
 
-  end).Start;
+  end);
 end;
 
 function TIdSimpleWebSocketClient.verifyHeader(pHeader: TStrings): boolean;
