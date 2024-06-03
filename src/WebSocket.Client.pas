@@ -73,6 +73,7 @@ Type
     FonConnectionDataEvent: TSWSCDataEvent;
     FonDataEvent: TSWSCDataEvent;
     FUpgraded: Boolean;
+    FonAfterUpgraded: TNotifyEvent;
 
   protected
 
@@ -103,6 +104,7 @@ Type
   published
     property onDataEvent: TSWSCDataEvent read FonDataEvent write FonDataEvent;
     property onConnectionDataEvent: TSWSCDataEvent read FonConnectionDataEvent write FonConnectionDataEvent;
+    property onAfterUpgraded: TNotifyEvent read FonAfterUpgraded write FonAfterUpgraded;
     property onPing: TSWSCDataEvent read FonPing write FonPing;
     property onError: TSWSCErrorEvent read FonError write FonError;
     property onHeartBeatTimer: TNotifyEvent read FonHeartBeatTimer write FonHeartBeatTimer;
@@ -241,6 +243,8 @@ begin
 
     readFromWebSocket;
     startHeartBeat;
+    if Connected and Upgraded and assigned(FonAfterUpgraded) then
+      FonAfterUpgraded(Self);
   finally
     URI.Free;
   end;
