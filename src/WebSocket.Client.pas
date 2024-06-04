@@ -7,6 +7,9 @@
  * Date: 25/05/2019 - Jason R. Nelson (adaloveless) - Fix warning and incorrect URI in "GET" request
  * Date: 22/02/2018
  TODO: implement methods for sending and receiving binary data, and support for bigger than 65536 bytes support
+ TODO: analise if usage of Connected is necessary, as in:
+       https://stackoverflow.com/questions/45828296/which-idtcpclient-functions-are-thread-safe
+       "Connected is NOT thread-safe. It performs a read operation, so if two or more threads call it at the same time, you risk corrupting data in the InputBuffer. 99% of the time, Connected should not be used at all. Just perform your I/O normally and let Indy raise an exception if the socket has been disconnected. –" Remy Lebeau Aug 23, 2017 at 3:48
 }
 (*
 Sample code:
